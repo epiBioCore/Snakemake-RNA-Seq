@@ -1,0 +1,16 @@
+channels:
+  - conda-forge
+  - bioconda
+  - r
+
+dependencies:
+  - trim-galore
+  - star=2.7.2a
+  - fastqc
+  - subread
+  - cufflinks=2.2.1
+  - multiqc
+  - bioconductor-deseq2
+  - deeptools
+  - pandas
+  - snakemake=5.25

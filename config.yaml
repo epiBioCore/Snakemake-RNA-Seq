@@ -1,0 +1,27 @@
+
+cutadapt-pe:
+  r1_adapter: "AGAGCACACGTCTGAACTCCAGTCAC"
+  r2_adapter: "AGATCGGAAGAGCACACGT"
+  params: "-q 0 "
+
+cutadapt-se:
+  params: "-q 0 --illumina"
+
+outdir: "RNA-Seq_results"
+#RNA solo ovation
+#  params: "--clip_R1 5"
+star:
+  params:
+
+
+
+raw_data:
+ref:
+gtf:
+
+units: "units.tsv"
+
+fdr:
+
+annotation:
+
