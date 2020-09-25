@@ -17,12 +17,10 @@ units.index = units.index.set_levels([i.astype(str) for i in units.index.levels]
 samples = list(units.index.get_level_values(0).unique())
 names = units.descriptive_name.unique().tolist()
 replicates = units.replicate.unique().tolist()
-
+print(config)
 def get_fastq(wildcards):
-    return(units.loc[(wildcards.sample,wildcards.unit),["fq1","fq2"]].dropna())
+    return(units.loc[(wildcards.id,wildcards.unit),["fq1","fq2"]].dropna())
 
-def is_single_end(sample,unit):
-    return pd.isnull(units.loc[(sample,unit),"fq2"])
 
 def get_replicate_fq(wildcards):
     input = expand([
@@ -34,24 +32,24 @@ def get_replicate_fq(wildcards):
 
 
 
-# def get_fq (wildcards):
-#     if not is_single_end(**wildcards):
-#         x
-#     else:
-#         y    
+def get_fq(wildcards):
+     if config["paired"]:
+        return(expand(f"{config['outdir']}/Trimmed_fastq/{wildcards.sample}_{{read}}.fq.gz",read = [1,2]))
+     else:
+        return(f"{config['outdir']}/Trimmed_fastq/{wildcards.sample}_1.fq.gz")
+    
 
-wildcard_constraints:
-    sample = "|".join(samples)
+
 
 
 ## fix rule all
 rule all:
     input:
-        expand(config["outdir"] + "/Trimmed_fastq/{unit.sample}_{unit.unit}.1.fq.gz",unit=units.itertuples()),
-        expand(config["outdir"] + "/Trimmed_fastq/{unit.sample}_{unit.unit}.2.fq.gz",unit=units.itertuples()),
+        #expand(config["outdir"] + "/Trimmed_fastq/{unit.sample}_{unit.unit}.1.fq.gz",unit=units.itertuples()),
+        #expand(config["outdir"] + "/Trimmed_fastq/{unit.sample}_{unit.unit}.2.fq.gz",unit=units.itertuples()),
         expand(config["outdir"] + "/FastQC/{unit.sample}_{unit.unit}_report.html",unit=units.itertuples()),
-        expand(config["outdir"] + "/Trimmed_fastq/{replicate}_{read}.fq.gz",replicate=replicates,read=[1,2])
-
+        #expand(config["outdir"] + "/Trimmed_fastq/{replicate}_{read}.fq.gz",replicate=replicates,read=[1,2])
+        expand(config["outdir"] + "/STAR/{sample}_Aligned.sortedByCoord.out.bam",sample=replicates)
 
 
 rule Fastqc:
@@ -59,11 +57,11 @@ rule Fastqc:
         get_fastq
                   
     output:
-         html = config["outdir"] + "/FastQC/{sample}_{unit}_report.html",
-         zip = config["outdir"] + "/FastQC/{sample}_{unit}_fastqc.zip"
+         html = config["outdir"] + "/FastQC/{id}_{unit}_report.html",
+         zip = config["outdir"] + "/FastQC/{id}_{unit}_fastqc.zip"
 
     log:
-        config["outdir"] + "/logs/fastqc/{sample}_{unit}.log"
+        config["outdir"] + "/logs/fastqc/{id}_{unit}.log"
 
     wrapper:
         "0.65.0/bio/fastqc"
@@ -75,12 +73,12 @@ rule cutadapt_pe:
         get_fastq
 
     output:
-        fastq1 = config["outdir"] + "/Trimmed_fastq/{sample}_{unit}.1.fq.gz",
-        fastq2 = config["outdir"] + "/Trimmed_fastq/{sample}_{unit}.2.fq.gz",
-        qc = config["outdir"] + "/Trimmed_fastq/{sample}_{unit}_qc.txt"
+        fastq1 = config["outdir"] + "/Trimmed_fastq/{id}_{unit}.1.fq.gz",
+        fastq2 = config["outdir"] + "/Trimmed_fastq/{id}_{unit}.2.fq.gz",
+        qc = config["outdir"] + "/Trimmed_fastq/{id}_{unit}_qc.txt"
 
     log:
-        config["outdir"] + "/logs/cutadapt/{sample}_{unit}_cutadapt.out"
+        config["outdir"] + "/logs/cutadapt/{id}_{unit}_cutadapt.out"
     params:
         adapters = "-a " + config["cutadapt-pe"]["r1_adapter"] + " -g " + config["cutadapt-pe"]["r2_adapter"],
         others = config["cutadapt-pe"]["params"]
@@ -96,62 +94,122 @@ rule merge_tech_reps:
         config["outdir"] +"/Trimmed_fastq/{replicate}_{read}.fq.gz"
 
     wildcard_constraints:
-        read="1|2"
+        read="1|2",
+        replicate=units.replicate.unique().tolist()
 
     shell:
         "cat {input} > {output}"        
 
 
 
-# rule trim_galore-se:
-#     input: 
-#         get_fastq
+rule cutadapt_se:
+    input: 
+        get_fastq
 
-#     output:
-#         r1 = config["outdir"] + "/Trimmed_fastq/{sample}_{unit}_val_1.fq.gz",
+    output:
+        fastq1 = config["outdir"] + "/Trimmed_fastq/{sample}_{unit}.1.fq.gz",
+        qc = config["outdir"] + "/Trimmed_fastq/{sample}_{unit}_qc.txt"
 
-#     log:
-#         config["outdir"] + "/logs/trim/{sample}_{unit}_trim_galore.out"
-#     params:
-#         o = config["outdir"] + "/Trimmed_fastq",
-#         extra = config["trim_galore-se"]["params"]
+    log:
+        config["outdir"] + "/logs/cutadapt/{sample}_{unit}_cutadapt.out"
+    params:
+        adapters = "-a " + config["cutadapt-se"]["r1_adapter"],
+        others = config["cutadapt-se"]["params"]
 
-#     shell:
-#         "trim_galore {params.extra} -o {params.o} -j 8 {input}"
+    wrapper:
+        "0.66.0/bio/cutadapt/se"
 
 
- 
-# rule:
-#     input:
-#         r1 = "Grove_results/trim/Trim_galore/{sample}_R1_val_1.fq.gz",
-#         r2 = "Grove_results/trim/Trim_galore/{sample}_R2_val_2.fq.gz"
+rule genome_generate:
+    input:
+        fasta = config["ref"],
 
-#     output:
-#         bam = "Grove_results/Alignment/{sample}_trim_galore_Aligned.sortedByCoord.out.bam"
+    output:
+        dir = directory("STARindex")    
 
-#     params:
-#         outdir = "Grove_results/Alignment/{sample}_trim_galore_"   
+    threads:
+        10
 
-#     log:
-#         "Grove_results/logs/Alignment/{sample}_trim_galore_STAR.out"
-#     shell:
-#          """
-#          STAR --runThreadN 10 \
-#           --genomeDir ../RNA-Seq/STAR1index \
-#           --readFilesIn {input.r1} {input.r2} \
-#           --readFilesCommand gunzip -c \
-#           --runMode alignReads \
-#           --outSAMattributes All \
-#           --alignSJoverhangMin 8 \
-#           --alignSJDBoverhangMin 1 \
-#           --outFilterMismatchNmax 999 \
-#           --outFilterMismatchNoverLmax 0.04 \
-#           --alignIntronMin 20 \
-#           --alignIntronMax 1000000 \
-#           --alignMatesGapMax 1000000 \
-#           --outSAMstrandField intronMotif \
-#           --outSAMtype BAM SortedByCoordinate \
-#           --outSAMunmapped Within KeepPairs \
-#           --outFileNamePrefix {params.outdir}
-#        """  
-#
+    params:
+        extra = "--sjdbGTFfile " + config["gtf"] + " --sjdbOverhang " + str(config["length"])
+
+    wrapper:
+        "0.66.0/bio/star/index"
+
+rule STAR_mapping:
+    input:
+        get_fq
+
+    output:
+        bam = config["outdir"] + "/STAR/{sample}_Aligned.sortedByCoord.out.bam"
+
+    params:
+        outdir = config["outdir"] + "/STAR/{sample}_",   
+        genome = rules.genome_generate.output.dir
+    threads:
+        config["star_mapping"]["threads"]
+
+    log:
+          config["outdir"] + "/logs/STAR/{sample}_STAR.out"
+    shell:
+          """
+          STAR --runThreadN {threads} \
+           --genomeDir {params.genome} \
+           --readFilesIn {input} \
+           --readFilesCommand gunzip -c \
+           --runMode alignReads \
+           --outSAMattributes All \
+           --alignSJoverhangMin 8 \
+           --alignSJDBoverhangMin 1 \
+           --outFilterMismatchNmax 999 \
+           --outFilterMismatchNoverLmax 0.04 \
+           --alignIntronMin 20 \
+           --alignIntronMax 1000000 \
+           --alignMatesGapMax 1000000 \
+           --outSAMstrandField intronMotif \
+           --outSAMtype BAM SortedByCoordinate \
+           --outFileNamePrefix {params.outdir} 2> {log}
+        """  
+
+rule index:
+    input:
+        bam = config["outdir"] + "/STAR/{sample}_Aligned.sortedByCoord.out.bam"
+
+    output:
+        bam = config["outdir"] + "/STAR/{sample}.bam"
+
+   run:
+    if config["paired"]:
+          shell("samtools view -b -f 0x2 "+ {input.bam} + " > " + {output.bam})
+          shell("samtools index " + {output.bam})
+     else:
+        shell("mv " + {input.bam} + " "+ {output.bam})   
+        shell("samtools index " + {output.bam})
+
+rule bigwigs:
+    input:
+        bam = config["outdir"] + "/STAR/{sample}.bam"
+
+    output:
+        bw = config["outdir"] + "/STAR/{sample}.bw"
+
+   shell:""""
+    bamCoverage -b {input.bam} --normalizeUsing CPM -of bigwig -o {output.bw}
+    """"
+
+rule_cuffnorm:
+    input:
+        expand(config["outdir"] + "/STAR/{sample}.bam",sample=replicates)
+    output:
+        directory(config["outdir"] + "/Cuffnorm")
+
+    params:
+        gtf: config["gtf"] 
+        lib       
+    threads:
+        config["cuffnorm"]["threads"]
+
+    shell:""
+        cuffnorm -o $cuffnorm -p {threads} {params.gtf} {params.lib} {input}
+        """"
+        

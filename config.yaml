@@ -3,25 +3,28 @@ fqsuffix: "fastq"
 fqext1: "R1"
 fqext2: "R2"
 
+paired: True
+length: 150
 cutadapt-pe:
   r1_adapter: "AGAGCACACGTCTGAACTCCAGTCAC"
   r2_adapter: "AGATCGGAAGAGCACACGT"
   params: "-q 0 "
 
 cutadapt-se:
-  params: "-q 0 --illumina"
+  r1_adapter: "AGAGCACACGTCTGAACTCCAGTCAC"
+  params: "-q 0"  
 
 outdir: "RNA-Seq_results"
 #RNA solo ovation
 #  params: "--clip_R1 5"
-star:
+star_mapping:
   params:
-
+  threads:
 
 
 raw_data:
-ref:
-gtf:
+ref: "genome.fa"
+gtf: "genes.gtf"
 
 units: "units.tsv"
 
