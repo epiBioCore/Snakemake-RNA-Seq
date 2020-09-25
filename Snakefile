@@ -15,12 +15,24 @@ units.index = units.index.set_levels([i.astype(str) for i in units.index.levels]
 #units = samples_df.index.get_level_values(1)
 #units = list(samples_df.unit.unique)
 samples = list(units.index.get_level_values(0).unique())
+names = units.descriptive_name.unique().tolist()
+replicates = units.replicate.unique().tolist()
 
 def get_fastq(wildcards):
     return(units.loc[(wildcards.sample,wildcards.unit),["fq1","fq2"]].dropna())
 
 def is_single_end(sample,unit):
     return pd.isnull(units.loc[(sample,unit),"fq2"])
+
+def get_replicate_fq(wildcards):
+    input = expand([
+            f"{config['outdir']}/Trimmed_fastq/{u.sample}_{u.unit}.{wildcards.read}.fq.gz"
+            for u in units.loc[units["replicate"] == wildcards.replicate].itertuples()
+        ])
+    return(input)    
+
+
+
 
 # def get_fq (wildcards):
 #     if not is_single_end(**wildcards):
@@ -37,7 +49,8 @@ rule all:
     input:
         expand(config["outdir"] + "/Trimmed_fastq/{unit.sample}_{unit.unit}.1.fq.gz",unit=units.itertuples()),
         expand(config["outdir"] + "/Trimmed_fastq/{unit.sample}_{unit.unit}.2.fq.gz",unit=units.itertuples()),
-        expand(config["outdir"] + "/FastQC/{unit.sample}_{unit.unit}_report.html",unit=units.itertuples())
+        expand(config["outdir"] + "/FastQC/{unit.sample}_{unit.unit}_report.html",unit=units.itertuples()),
+        expand(config["outdir"] + "/Trimmed_fastq/{replicate}_{read}.fq.gz",replicate=replicates,read=[1,2])
 
 
 
@@ -75,6 +88,20 @@ rule cutadapt_pe:
     wrapper:
         "0.66.0/bio/cutadapt/pe"
         
+rule merge_tech_reps:
+    input:
+        get_replicate_fq
+
+    output:
+        config["outdir"] +"/Trimmed_fastq/{replicate}_{read}.fq.gz"
+
+    wildcard_constraints:
+        read="1|2"
+
+    shell:
+        "cat {input} > {output}"        
+
+
 
 # rule trim_galore-se:
 #     input: 
