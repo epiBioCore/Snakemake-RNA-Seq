@@ -38,7 +38,27 @@ def get_fq(wildcards):
      else:
         return(f"{config['outdir']}/Trimmed_fastq/{wildcards.sample}_1.fq.gz")
     
+wildcard_constraints:
+    sample="|".join(replicates)
 
+
+def get_strand(sample):
+                report_file = [f for f in input if f.endswith(f"-{sample}.strandedness.txt")][0]
+                with open(report_file) as report:
+                    fail_val = fwd_val = 0
+                    for line in report:
+                        if line.startswith("Fraction of reads failed"):
+                            fail_val = float(line.strip().split(": ")[1])
+                        elif line.startswith(("""Fraction of reads explained by "1++""",
+                                              """Fraction of reads explained by "++""")):
+                            fwd_val = float(line.strip().split(": ")[1])
+
+                if fwd_val > 0.6:
+                    return "forward"
+                elif 1 - (fwd_val + fail_val) > 0.6:
+                    return "reverse"
+                else:
+                    return "no"
 
 
 
@@ -47,10 +67,11 @@ rule all:
     input:
         #expand(config["outdir"] + "/Trimmed_fastq/{unit.sample}_{unit.unit}.1.fq.gz",unit=units.itertuples()),
         #expand(config["outdir"] + "/Trimmed_fastq/{unit.sample}_{unit.unit}.2.fq.gz",unit=units.itertuples()),
-        expand(config["outdir"] + "/FastQC/{unit.sample}_{unit.unit}_report.html",unit=units.itertuples()),
+        #expand(config["outdir"] + "/FastQC/{unit.sample}_{unit.unit}_report.html",unit=units.itertuples()),
         #expand(config["outdir"] + "/Trimmed_fastq/{replicate}_{read}.fq.gz",replicate=replicates,read=[1,2])
-        expand(config["outdir"] + "/STAR/{sample}_Aligned.sortedByCoord.out.bam",sample=replicates)
-
+        #expand(config["outdir"] + "/STAR/{sample}_Aligned.sortedByCoord.out.bam",sample=replicates)
+        expand(config["outdir"] + "/STAR/{sample}.bam",sample=replicates),
+        expand(config["outdir"] + "/Bigwigs/{sample}.bw",sample=replicates)
 
 rule Fastqc:
     input: 
@@ -95,7 +116,7 @@ rule merge_tech_reps:
 
     wildcard_constraints:
         read="1|2",
-        replicate=units.replicate.unique().tolist()
+        replicate= "|".join(replicates)
 
     shell:
         "cat {input} > {output}"        
@@ -138,14 +159,14 @@ rule genome_generate:
 
 rule STAR_mapping:
     input:
-        get_fq
+        fq= get_fq,
+        genome = rules.genome_generate.output.dir
 
     output:
         bam = config["outdir"] + "/STAR/{sample}_Aligned.sortedByCoord.out.bam"
 
     params:
         outdir = config["outdir"] + "/STAR/{sample}_",   
-        genome = rules.genome_generate.output.dir
     threads:
         config["star_mapping"]["threads"]
 
@@ -154,8 +175,8 @@ rule STAR_mapping:
     shell:
           """
           STAR --runThreadN {threads} \
-           --genomeDir {params.genome} \
-           --readFilesIn {input} \
+           --genomeDir {input.genome:} \
+           --readFilesIn {input.fq} \
            --readFilesCommand gunzip -c \
            --runMode alignReads \
            --outSAMattributes All \
@@ -178,38 +199,62 @@ rule index:
     output:
         bam = config["outdir"] + "/STAR/{sample}.bam"
 
-   run:
-    if config["paired"]:
-          shell("samtools view -b -f 0x2 "+ {input.bam} + " > " + {output.bam})
-          shell("samtools index " + {output.bam})
-     else:
-        shell("mv " + {input.bam} + " "+ {output.bam})   
-        shell("samtools index " + {output.bam})
+    run:
+        if config["paired"]:
+            shell("samtools view -b -f 0x2 "+ "{input.bam}" + " > " + "{output.bam}")
+            shell("samtools index " + "{output.bam}")
+        else:
+            shell("mv " + "{input.bam}" + " "+ "{output.bam}")   
+            shell("samtools index " + "{output.bam}")
 
 rule bigwigs:
     input:
         bam = config["outdir"] + "/STAR/{sample}.bam"
 
     output:
-        bw = config["outdir"] + "/STAR/{sample}.bw"
+        bw = config["outdir"] + "/Bigwigs/{sample}.bw"
 
-   shell:""""
-    bamCoverage -b {input.bam} --normalizeUsing CPM -of bigwig -o {output.bw}
-    """"
+    log:
+        config["outdir"] + "/logs/bamCoverage/{sample}.out"
+    shell:"""
+        bamCoverage -b {input.bam} --normalizeUsing CPM -of bigwig -o {output.bw}
+        """
 
-rule_cuffnorm:
+rule gtf_to_bed:
+    input:
+        config["gtf"]
+
+    output:
+        "resources/genome.bed" 
+
+    shell:
+        "echo"
+
+rule infer_strand:
+    input:
+        bam = config["outdir"] + "/STAR/{sample}.bam",
+        bed = "resources/genome.bed"
+
+    output:
+        txt = config["outdir"] + "/Strand/{sample}_strand.report.txt" 
+
+    shell:
+        "infer_experiment.py -i {input.bam} -r {input.bed} > {output.txt}"       
+
+rule cuffnorm:
     input:
         expand(config["outdir"] + "/STAR/{sample}.bam",sample=replicates)
     output:
         directory(config["outdir"] + "/Cuffnorm")
 
     params:
-        gtf: config["gtf"] 
-        lib       
+        gtf= config["gtf"], 
+        lib= "first"       
     threads:
         config["cuffnorm"]["threads"]
 
-    shell:""
+    shell:""""
         cuffnorm -o $cuffnorm -p {threads} {params.gtf} {params.lib} {input}
-        """"
+        """
+        
         

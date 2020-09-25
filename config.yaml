@@ -5,30 +5,34 @@ fqext2: "R2"
 
 paired: True
 length: 150
+
+
 cutadapt-pe:
   r1_adapter: "AGAGCACACGTCTGAACTCCAGTCAC"
   r2_adapter: "AGATCGGAAGAGCACACGT"
-  params: "-q 0 "
+  params: "-q 0 -m 20"
 
 cutadapt-se:
   r1_adapter: "AGAGCACACGTCTGAACTCCAGTCAC"
-  params: "-q 0"  
+  params: "-q 0 -m 20"  
 
 outdir: "RNA-Seq_results"
 #RNA solo ovation
 #  params: "--clip_R1 5"
 star_mapping:
   params:
-  threads:
+  threads: 10
 
+cuffnorm:
+  threads: 10
 
-raw_data:
+raw_data: "."
 ref: "genome.fa"
 gtf: "genes.gtf"
 
 units: "units.tsv"
 
-fdr:
+fdr: 0.05
 
-annotation:
+annotation: "hg19"
 
