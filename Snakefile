@@ -42,23 +42,6 @@ wildcard_constraints:
     sample="|".join(replicates)
 
 
-def get_strand(sample):
-                report_file = [f for f in input if f.endswith(f"-{sample}.strandedness.txt")][0]
-                with open(report_file) as report:
-                    fail_val = fwd_val = 0
-                    for line in report:
-                        if line.startswith("Fraction of reads failed"):
-                            fail_val = float(line.strip().split(": ")[1])
-                        elif line.startswith(("""Fraction of reads explained by "1++""",
-                                              """Fraction of reads explained by "++""")):
-                            fwd_val = float(line.strip().split(": ")[1])
-
-                if fwd_val > 0.6:
-                    return "forward"
-                elif 1 - (fwd_val + fail_val) > 0.6:
-                    return "reverse"
-                else:
-                    return "no"
 
 
 
@@ -71,7 +54,10 @@ rule all:
         #expand(config["outdir"] + "/Trimmed_fastq/{replicate}_{read}.fq.gz",replicate=replicates,read=[1,2])
         #expand(config["outdir"] + "/STAR/{sample}_Aligned.sortedByCoord.out.bam",sample=replicates)
         expand(config["outdir"] + "/STAR/{sample}.bam",sample=replicates),
-        expand(config["outdir"] + "/Bigwigs/{sample}.bw",sample=replicates)
+        expand(config["outdir"] + "/Bigwigs/{sample}.bw",sample=replicates),
+        directory(config["outdir"] + "/Cuffnorm"),
+
+
 
 rule Fastqc:
     input: 
@@ -140,64 +126,92 @@ rule cutadapt_se:
     wrapper:
         "0.66.0/bio/cutadapt/se"
 
+if config["aligner"] == "STAR":
 
-rule genome_generate:
-    input:
-        fasta = config["ref"],
+    rule genome_generate:
+        input:
+            fasta = config["ref"]
 
-    output:
-        dir = directory("STARindex")    
+        output:
+            dir = directory("STARindex")    
 
-    threads:
-        10
+        threads:
+            10
 
-    params:
-        extra = "--sjdbGTFfile " + config["gtf"] + " --sjdbOverhang " + str(config["length"])
+        params:
+            extra = "--sjdbGTFfile " + config["gtf"] + " --sjdbOverhang " + str(config["length"])
 
-    wrapper:
-        "0.66.0/bio/star/index"
+        wrapper:
+            "0.66.0/bio/star/index"
 
-rule STAR_mapping:
-    input:
-        fq= get_fq,
-        genome = rules.genome_generate.output.dir
+    rule STAR_mapping:
+        input:
+            fq= get_fq,
+            genome = rules.genome_generate.output.dir
 
-    output:
-        bam = config["outdir"] + "/STAR/{sample}_Aligned.sortedByCoord.out.bam"
+        output:
+            temp(bam = config["outdir"] + "/Alignments/{sample}.bam"),
+            stat = config["outdir"] + "/Alignments/{sample}_Log.final.out"
 
-    params:
-        outdir = config["outdir"] + "/STAR/{sample}_",   
-    threads:
-        config["star_mapping"]["threads"]
+        params:
+            outdir = config["outdir"] + "/Alignments/{sample}_",   
+        threads:
+            config["star_mapping"]["threads"]
 
-    log:
-          config["outdir"] + "/logs/STAR/{sample}_STAR.out"
-    shell:
-          """
-          STAR --runThreadN {threads} \
-           --genomeDir {input.genome:} \
-           --readFilesIn {input.fq} \
-           --readFilesCommand gunzip -c \
-           --runMode alignReads \
-           --outSAMattributes All \
-           --alignSJoverhangMin 8 \
-           --alignSJDBoverhangMin 1 \
-           --outFilterMismatchNmax 999 \
-           --outFilterMismatchNoverLmax 0.04 \
-           --alignIntronMin 20 \
-           --alignIntronMax 1000000 \
-           --alignMatesGapMax 1000000 \
-           --outSAMstrandField intronMotif \
-           --outSAMtype BAM SortedByCoordinate \
-           --outFileNamePrefix {params.outdir} 2> {log}
-        """  
+        log:
+            config["outdir"] + "/logs/STAR/{sample}_STAR.out"
+        shell:
+            """
+            STAR --runThreadN {threads} \
+            --genomeDir {input.genome:} \
+            --readFilesIn {input.fq} \
+            --readFilesCommand gunzip -c \
+            --runMode alignReads \
+            --outSAMattributes All \
+            --alignSJoverhangMin 8 \
+            --alignSJDBoverhangMin 1 \
+            --outFilterMismatchNmax 999 \
+            --outFilterMismatchNoverLmax 0.04 \
+            --alignIntronMin 20 \
+            --alignIntronMax 1000000 \
+            --alignMatesGapMax 1000000 \
+            --outSAMstrandField intronMotif \
+            --outSAMtype BAM SortedByCoordinate \
+            --outFileNamePrefix {params.outdir} 2> {log}
+
+             mv {params.outdir}_Aligned.sortedByCoord.out.bam {output}
+            """  
+
+elif config["aligner"] == "hisat2":
+    rule hisat:
+        input:
+            fq = get_fq,
+
+        output:
+            temp(bam = config["outdir"] + "/Alignments/{sample}.bam"),
+            stat = config["outdir"] + "/Alignments/{sample}_align_stat.txt"
+        params:
+            input=(
+                lambda wildcards, input: ["-U", input.fq]
+                if config["Paired"] == True
+                else ["-1", input.fq[0], "-2", input.fq[1]]),
+            index = config["hisat2"]["index"],
+            strand = config["hisat2"]["strand"]
+
+        threads:
+            config["hisat2"]["threads"]
+
+        shell: """
+         hisat2 -p {threads} --rna-strandness {params.strand} --new-summary {params.other} -x {params.index} {params.input} 2> {out.stat} | samtools view -hb - > {output.bam}
+     
+            """
 
 rule index:
     input:
-        bam = config["outdir"] + "/STAR/{sample}_Aligned.sortedByCoord.out.bam"
+        bam = config["outdir"] + "/Alignments/{sample}.bam"
 
     output:
-        bam = config["outdir"] + "/STAR/{sample}.bam"
+        bam = config["outdir"] + "/Alignment/{sample}_sorted.bam"
 
     run:
         if config["paired"]:
@@ -209,7 +223,7 @@ rule index:
 
 rule bigwigs:
     input:
-        bam = config["outdir"] + "/STAR/{sample}.bam"
+        bam = config["outdir"] + "/Alignments/{sample}_sorted.bam"
 
     output:
         bw = config["outdir"] + "/Bigwigs/{sample}.bw"
@@ -220,41 +234,58 @@ rule bigwigs:
         bamCoverage -b {input.bam} --normalizeUsing CPM -of bigwig -o {output.bw}
         """
 
-rule gtf_to_bed:
-    input:
-        config["gtf"]
-
-    output:
-        "resources/genome.bed" 
-
-    shell:
-        "echo"
-
-rule infer_strand:
-    input:
-        bam = config["outdir"] + "/STAR/{sample}.bam",
-        bed = "resources/genome.bed"
-
-    output:
-        txt = config["outdir"] + "/Strand/{sample}_strand.report.txt" 
-
-    shell:
-        "infer_experiment.py -i {input.bam} -r {input.bed} > {output.txt}"       
 
 rule cuffnorm:
     input:
-        expand(config["outdir"] + "/STAR/{sample}.bam",sample=replicates)
+        expand(config["outdir"] + "/Alignments/{sample}_sorted.bam",sample=replicates)
+
     output:
-        directory(config["outdir"] + "/Cuffnorm")
+        dir = directory(config["outdir"] + "/Cuffnorm"),
+        table = directory(config["outdir"] + "/Cuffnorm/genes_fpkm.table")
 
     params:
         gtf= config["gtf"], 
-        lib= "first"       
+        lib= config["cuffnorm"]["lib"]
+
     threads:
         config["cuffnorm"]["threads"]
 
-    shell:""""
-        cuffnorm -o $cuffnorm -p {threads} {params.gtf} {params.lib} {input}
+    log: config["outdir"] + "/logs/cuffnorm.out"
+
+    shell:"""
+        cuffnorm -o {output.dir} -p {threads} --library-type {params.lib} {params.gtf} {input} 2> {log}
         """
-        
-        
+
+rule featureCounts:
+    input:
+        expand(config["outdir"] + "/Alignment/{sample}_sorted.bam",sample=replicates)
+
+    output:
+        counts = config["outdir"] + "/Counts/geneCounts.txt",
+        stats = config["outdir"] + "/Counts/geneCounts.txt.summary"    
+    
+    log:
+       config["outdir"] + "/logs/featureCounts.out" 
+
+    params:
+        gtf = config["gtf"],
+        strand = config["featureCounts"]["strand"],
+        other = config["featureCounts"]["other"]
+
+    threads:    
+        config["featureCounts"]["threads"]
+
+    shell:
+    "featureCounts -a {params.gtf} -s {params.strand} {params.other} -o {output.counts} {input} 2> {log}"
+
+ rule prepfeatureCounts:
+    input:
+        counts = config["outdir"] + "/Counts/geneCounts.txt"
+
+    output: 
+        counts = config["outdir"] + "/Counts/geneCounts_for_DESEq2.csv",
+        annot = config["outdir"] + "/Counts/gene_lengths.csv"
+
+    script: "Script/prepfeatureCounts.R"    
+
+      

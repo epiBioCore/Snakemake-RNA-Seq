@@ -19,12 +19,38 @@ cutadapt-se:
 outdir: "RNA-Seq_results"
 #RNA solo ovation
 #  params: "--clip_R1 5"
+
+aligner: 'STAR'
+## choose between hisat2 or STAR
+
 star_mapping:
   params:
   threads: 10
 
+hisat2_mapping:
+  other:
+  threads: 10
+  index: "/lower_bay/local_storage/annotation_db/Mus_Musculus/UCSC/mm10/Sequence/newHisat/genome" 
+  strand: "unstranded"
+  ## other options: R RF
+
 cuffnorm:
   threads: 10
+  lib: 'fr-unstranded'
+
+## choices  
+## "fr-unstranded"
+## "fr-secondstrand",
+## "fr-firststrand"]
+featureCounts:
+  threads: 10
+  other: "-p" ## paired
+  strand: 0 
+
+## choices:
+## "0"
+## "1"
+## "2"
 
 raw_data: "."
 ref: "genome.fa"
