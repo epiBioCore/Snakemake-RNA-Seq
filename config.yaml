@@ -1,10 +1,23 @@
 
-fqsuffix: "fastq"
+fqsuffix: "fastq.gz"
 fqext1: "R1"
 fqext2: "R2"
 
 paired: True
 length: 150
+
+fq_dir: "Raw_fastq"
+ref: "genome.fa"
+gtf: "genes.gtf"
+
+### Do you have library prep tech reps- these will be merged together
+## sample names must be different
+tech_reps: False
+sample_sheet: "units_no_techreps.tsv"
+
+fdr: 0.05
+
+annotation: "hg19"
 
 
 cutadapt-pe:
@@ -16,7 +29,7 @@ cutadapt-se:
   r1_adapter: "AGAGCACACGTCTGAACTCCAGTCAC"
   params: "-q 0 -m 20"  
 
-outdir: "RNA-Seq_results"
+outdir: "RNA-Seq_analysis_2"
 #RNA solo ovation
 #  params: "--clip_R1 5"
 
@@ -52,13 +65,29 @@ featureCounts:
 ## "1"
 ## "2"
 
-raw_data: "."
-ref: "genome.fa"
-gtf: "genes.gtf"
-
-units: "units.tsv"
-
-fdr: 0.05
-
-annotation: "hg19"
-
+resources:
+  star:
+      mem: 300G
+      time: "2:00:00"
+      cpus: 16
+  hisat:
+      mem: 300G
+      time: "2:00:00"
+      cpus: 16      
+  featureCounts:
+      mem: 200G
+      time: "1:30:00"
+      cpus: 16   
+  cuffnorm:
+      mem: 200G
+      time: "5:00:00"
+      cpus: 16  
+  bamCov:
+      mem: 200G
+      time: "1:00:00"
+      cpus: 16 
+  samtools:
+      mem: 200G
+      time: "1:00:00" 
+      cpus: 16
+     

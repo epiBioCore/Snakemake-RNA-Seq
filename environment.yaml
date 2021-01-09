@@ -4,7 +4,7 @@ channels:
   - r
 
 dependencies:
-  - trim-galore
+  - trimmomatic=0.39
   - star=2.7.2a
   - fastqc
   - subread
