@@ -1,4 +1,4 @@
-Sample	tech_rep	bio_replicate	condition	descriptive_name	fq1	fq2
-20-016-010	lane1	control_1	control	20-016-010	Raw_fastq/20-016-010_L1_R1.fastq.gz	Raw_fastq/20-016-010_L1_R2.fastq.gz
-20-016-010	lane2	control_1	control	20-016-010	Raw_fastq/20-016-010_L2_R1.fastq.gz	Raw_fastq/20-016-010_L2_R2.fastq.gz
-20-016-056	lane1	Treat_1	Treat	20-016-056	Raw_fastq/20-016-056_L1_R1.fastq.gz	Raw_fastq/20-016-056_L1_R2.fastq.gz
+Sample	replicate	condition	descriptive_name	fq1	fq2
+20-016-010_L1	control_1	control	20-016-010	Raw_fastq/20-016-010_L1_R1.fastq.gz	Raw_fastq/20-016-010_L1_R2.fastq.gz
+20-016-010_L2	control_1	control	20-016-010	Raw_fastq/20-016-010_L2_R1.fastq.gz	Raw_fastq/20-016-010_L2_R2.fastq.gz
+20-016-056	Treat_1	Treat	20-016-056	Raw_fastq/20-016-056_L1_R1.fastq.gz	Raw_fastq/20-016-056_L1_R2.fastq.gz

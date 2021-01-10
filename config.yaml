@@ -3,7 +3,7 @@ fqsuffix: "fastq.gz"
 fqext1: "R1"
 fqext2: "R2"
 
-paired: True
+paired: False
 length: 150
 
 fq_dir: "Raw_fastq"
@@ -13,12 +13,19 @@ gtf: "genes.gtf"
 ### Do you have library prep tech reps- these will be merged together
 ## sample names must be different
 tech_reps: False
-sample_sheet: "units_no_techreps.tsv"
+sample_sheet: "units_techreps.tsv"
 
 fdr: 0.05
 
 annotation: "hg19"
 
+trimmomatic-pe:
+  adapters: ~/miniconda3/envs/RNA-Seq.2020.12/share/trimmomatic-0.39-1/adapters/TruSeq3-SE.fa
+  other: "MINLEN:10"
+
+trimmomatic-se:
+  adapters: ~/miniconda3/envs/RNA-Seq.2020.12/share/trimmomatic-0.39-1/adapters/TruSeq3-SE.fa
+  other: "MINLEN:10"
 
 cutadapt-pe:
   r1_adapter: "AGAGCACACGTCTGAACTCCAGTCAC"
