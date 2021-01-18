@@ -1,8 +1,9 @@
-ruleorder: trimmonatic_pe > trimmonatic_se
 
-rule trimmonatic_pe:
+rule trimmomatic_pe:
     input:
-        get_fastq
+        r1 = "{fq_dir}/{{sample}}_{fqext1}.{fqsuffix}".format(**config),
+        r2 = "{fq_dir}/{{sample}}_{fqext2}.{fqsuffix}".format(**config)
+
 
     output:
         fastq1 = "{outdir}/Trimmed_fastq/{{sample}}_{fqext1}_Trimmed.{fqsuffix}".format(**config),
@@ -13,17 +14,17 @@ rule trimmonatic_pe:
         stat = "{outdir}/logs/Trimomatic/{{sample}}_trimmomatic.out".format(**config)
 
     benchmark:
-        config["outdir"] + "/benchmarks/Trimomatic/{sample}_trimmomatic.out"
+        "{outdir}/benchmarks/Trimomatic/{sample}_trimmomatic.out".format(**config)
 
     params:
         adapter = config["trimmomatic-pe"]["adapters"],
-        other = config["trimmonatic-pe"]["other"],
+        other = config["trimmomatic-pe"]["other"],
         partition = "talon-fat"
 
     resources:
-        cpus = 16,
-        time = "2:00:00",
-        mem = "300G"
+        cpus = config["resources"]["trimmomatic-pe"]["cpus"],
+        time = config["resources"]["trimmomatic-pe"]["time"],
+        mem = config["resources"]["trimmomatic-pe"]["mem"]
 
     shell: """
         trimmomatic PE -threads {resources.cpus} -phred33 -trimlog {output.log}  \
@@ -32,9 +33,9 @@ rule trimmonatic_pe:
          {output.fastq2} {output.u2} \
         ILLUMINACLIP:{params.adapter}:2:30:10:3:TRUE {params.other} 2> {output.stat}
     """
-rule trimmonatic_se:
+rule trimmomatic_se:
     input:
-        get_fastq
+        r1 = "{outdir}/{fq_dir}/{{sample}}_{fqext1}.{fqsuffix}".format(**config)
 
     output:
         fastq1 = "{outdir}/Trimmed_fastq/{{sample}}_Trimmed.{fqsuffix}".format(**config),
@@ -47,13 +48,13 @@ rule trimmonatic_se:
 
     params:
         adapter = config["trimmomatic-se"]["adapters"],
-        other = config["trimmonatic-se"]["other"],
+        other = config["trimmomatic-se"]["other"],
         partition = "talon-fat"
 
     resources:
-        cpus = 16,
-        time = "2:00:00",
-        mem = "300G"
+        cpus = config["resources"]["trimmomatic-se"]["cpus"],
+        time = config["resources"]["trimmomatic-se"]["time"],
+        mem = config["resources"]["trimmomatic-se"]["mem"]
 
     shell: """
         trimmomatic SE -threads {resources.cpus} -phred33 -trimlog {output.log}  \

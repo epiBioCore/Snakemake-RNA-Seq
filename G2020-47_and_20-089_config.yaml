@@ -6,22 +6,22 @@ fqext2: "R2"
 paired: True
 length: 150
 
+outdir: "RNA-Seq_analysis_2"
+
 fq_dir: "RNA-Seq_analysis_2/Raw_fastq"
 ref: "/home/danielle.perley/Ref/hg19.fa"
 gtf: "/home/danielle.perley/Ref/hg19.gtf"
 
-workdir: "/home/danielle.perley/Snakemake-RNA-Seq"
 ### Do you have library prep tech reps- these will be merged together
 ## sample names must be different
 # how to handle replicates
 technical_replicates: merge ## change to keep to not combine
 sample_sheet: "G2020-47_and_20-089_samples.txt"
-comparisons_sheet: "comparisons.final.txt"
-use_cuffnorm_fpkms: True
 
 annotation:
   species: "hsapiens"
-  ids: "SYMBOLS" 
+  ids: "SYMBOL" 
+
 
 trimmomatic-pe:
   adapters: /home/danielle.perley/miniconda3/envs/RNA-Seq.2020.12/share/trimmomatic-0.39-1/adapters/TruSeq3-SE.fa
@@ -31,16 +31,15 @@ trimmomatic-se:
   adapters: /home/danielle.perley/miniconda3/envs/RNA-Seq.2020.12/share/trimmomatic-0.39-1/adapters/TruSeq3-SE.fa
   other: "MINLEN:10"
 
-# cutadapt-pe:
-#   r1_adapter: "AGAGCACACGTCTGAACTCCAGTCAC"
-#   r2_adapter: "AGATCGGAAGAGCACACGT"
-#   params: "-q 0 -m 20"
+cutadapt-pe:
+  r1_adapter: "AGAGCACACGTCTGAACTCCAGTCAC"
+  r2_adapter: "AGATCGGAAGAGCACACGT"
+  params: "-q 0 -m 20"
 
-# cutadapt-se:
-#   r1_adapter: "AGAGCACACGTCTGAACTCCAGTCAC"
-#   params: "-q 0 -m 20"  
+cutadapt-se:
+  r1_adapter: "AGAGCACACGTCTGAACTCCAGTCAC"
+  params: "-q 0 -m 20"  
 
-outdir: "test3"
 #RNA solo ovation
 #  params: "--clip_R1 5"
 
@@ -59,6 +58,23 @@ hisat2_mapping:
 cuffnorm:
   lib: 'fr-unstranded'
 
+DESeq2:
+  fdr: 0.05
+
+pca:
+  col:
+    - condition    
+  labels: TRUE
+  label_size: 1  
+
+sample_clustering:
+  row_labels: condition
+  col_labels: descriptive_name
+
+enrichment_plots:
+    width: 12
+    heigth: 11
+    units: "in"  
 ## choices  
 ## "fr-unstranded"
 ## "fr-secondstrand",
@@ -72,14 +88,10 @@ featureCounts:
 ## "1"
 ## "2"
 
-DESeq2:
-  fdr: 0.05
-
-
 resources:
   trimmomatic-pe:
       mem: 300G
-      time: "2:00:00"
+      time: "5:00:00"
       cpus: 16
   trimmomatic-se:
       mem: 300G
@@ -87,7 +99,7 @@ resources:
       cpus: 16    
   star:
       mem: 300G
-      time: "2:00:00"
+      time: "6:00:00"
       cpus: 16
   hisat:
       mem: 300G
@@ -95,11 +107,11 @@ resources:
       cpus: 16      
   featureCounts:
       mem: 200G
-      time: "1:30:00"
+      time: "2:00:00"
       cpus: 16   
   cuffnorm:
       mem: 200G
-      time: "8:00:00"
+      time: "12:00:00"
       cpus: 16  
   bamCov:
       mem: 200G
@@ -112,5 +124,8 @@ resources:
   DESeq2:
       mem: 50G
       time: "30:00"
-      cpus: 16    
-     
+      cpus: 16        
+  Enrich:
+      mem: 50G
+      time: "30:00"
+      cpus: 16          

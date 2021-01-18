@@ -2,31 +2,28 @@
 ## From https://github.com/vanheeringen-lab/seq2science
 
 # dataframe with all technical replicates collapsed
-cols = ["Sample"]
-subset = ["Sample"]
-if "replicate" in units:
+cols = ["sample"]
+subset = ["sample"]
+if "replicate" in samples:
     cols = ["replicate"]
     subset = ["replicate"]
-if "condition" in units:
+if "condition" in samples:
     cols.append("condition")
     subset.append("condition")
-# if "control" in units:
+# if "control" in samples:
 #     cols.append("control")
-# if "colors" in units:
+# if "colors" in samples:
 #     cols.append("colors")
-print(units)
-treps = units.reset_index(drop=True)[cols].drop_duplicates(subset=subset).set_index(cols[0])
+treps = samples.reset_index()[cols].drop_duplicates(subset=subset).set_index(cols[0])
 assert treps.index.is_unique, "duplicate value found in treps"
 
-print(units)
-
 # treps that came from a merge
-merged_treps = [trep for trep in treps.index if trep not in units.index]
+merged_treps = [trep for trep in treps.index if trep not in samples.index]
 #merged_treps_single = [trep for trep in merged_treps if sampledict[trep]["layout"] == "SINGLE"]
 #merged_treps_paired = [trep for trep in merged_treps if sampledict[trep]["layout"] == "PAIRED"]
 
 # all samples (including controls)
-merged_treps = [trep for trep in treps.index if trep not in units.index]
+merged_treps = [trep for trep in treps.index if trep not in samples.index]
 
 
 # # dataframe with all replicates collapsed
@@ -70,24 +67,19 @@ def rep_to_descriptive(rep, brep=False):
     return rep
 
 
-if "replicate" in units:
+if "replicate" in samples:
 
     def get_merge_replicates(wildcards):
         input_files = expand(
             [
                 f"{{outdir}}/Trimmed_fastq/{sample}{wildcards.fqext}_Trimmed.{{fqsuffix}}"
-                for sample in units[units["replicate"] == wildcards.replicate].index
+                for sample in samples[samples["replicate"] == wildcards.replicate].index
             ],
             **config,
         )
         if len(input_files) == 0:
             return ["Something went wrong, and we tried to merge replicates but there were no replicates?!"]
 
-        print(wildcards.replicate)
-        print(wildcards.fqext)
-        print(units)   
-        for sample in units[units["replicate"] == wildcards.replicate].index:
-            print(sample)
 
         return input_files
 
@@ -95,9 +87,9 @@ if "replicate" in units:
     #     ruleorder: merge_replicates > fastp_PE > fastp_SE
     # elif config["trimmer"] == "trimgalore":
     #     ruleorder: merge_replicates > trimgalore_PE > trimgalore_SE
-    ruleorder: merge_replicates > trimmonatic_pe > trimmonatic_pe       
+    ruleorder: merge_replicates > trimmomatic_pe > trimmomatic_pe       
     # true treps are treps combined of 2 samples or more
-    true_treps = [trep for trep in treps.index if trep not in units.index]
+    true_treps = [trep for trep in treps.index if trep not in samples.index]
 
     rule merge_replicates:
         """
@@ -119,6 +111,9 @@ if "replicate" in units:
             expand("{outdir}/logs/merge_replicates/{{replicate}}{{fqext}}.log", **config),
         benchmark:
             expand("{outdir}/benchmarks/merge_replicates/{{replicate}}{{fqext}}.benchmark.txt", **config)[0]
+
+        params:
+            partition = "talon"    
         run:
             for rep in input:
                 rep_name = re.findall("\/([^\/_]+)_", rep)[-1]

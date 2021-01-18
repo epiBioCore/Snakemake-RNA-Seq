@@ -16,7 +16,7 @@ if config["aligner"] == "STAR":
             fasta = config["ref"]
 
         output:
-            dir = directory("STARindex")    
+            dir = directory("{outdir}/STARindex".format(**config))    
 
         resources:
             cpus = config["resources"]["star"]["cpus"],
@@ -35,6 +35,8 @@ if config["aligner"] == "STAR":
             partition = "talon-fat"
 
         shell: """
+                mkdir {output.dir}
+
                 STAR --runThreadN {resources.cpus} \
                  --runMode genomeGenerate \
                 --genomeDir {output.dir} \
@@ -49,29 +51,33 @@ if config["aligner"] == "STAR":
             genome = rules.genome_generate.output.dir
 
         output:
-            bam = config["outdir"] + "/Alignments/{sample}_sorted.bam",
-            stat = config["outdir"] + "/Alignments/{sample}_Log.final.out"
+            bam = "{outdir}/Alignments/{{sample}}_sorted.bam".format(**config),
+            bai = "{outdir}/Alignments/{{sample}}_sorted.bam.bai".format(**config),
+            stat = "{outdir}/Alignments/{{sample}}_Log.final.out".format(**config)
 
         params:
-            outdir = config["outdir"] + "/Alignments/{sample}_",   
-        threads:
-            config["star_mapping"]["threads"]
+            outdir = "{outdir}/Alignments/{{sample}}_".format(**config), 
+            partition = "talon-fat"  
+        resources:
+            cpus = config["resources"]["star"]["cpus"],
+            time = config["resources"]["star"]["time"],
+            mem = config["resources"]["star"]["mem"],
 
         benchmark:
-            config["outdir"] + "/benchmarks/STAR/{sample}_STAR.bench.txt"
+            "{outdir}/benchmarks/STAR/{{sample}}_STAR.bench.txt".format(**config)
 
         log:
-            config["outdir"] + "/logs/STAR/{sample}_STAR.out"
+            "{outdir}/logs/STAR/{{sample}}_STAR.out".format(**config)
         shell:
             """
-            STAR --runThreadN {threads} \
+            STAR --runThreadN {resources.cpus} \
             --genomeDir {input.genome:} \
             --readFilesIn {input.fq} \
             --readFilesCommand gunzip -c \
             --runMode alignReads \
             --outSAMattributes All \
             --alignSJoverhangMin 8 \
-            --alignSJDBoverhangMin 1 \
+           --alignSJDBoverhangMin 1 \
             --outFilterMismatchNmax 999 \
             --outFilterMismatchNoverLmax 0.04 \
             --alignIntronMin 20 \
@@ -81,17 +87,18 @@ if config["aligner"] == "STAR":
             --outSAMtype BAM SortedByCoordinate \
             --outFileNamePrefix {params.outdir} 2> {log}
 
-             mv {params.outdir}_Aligned.sortedByCoord.out.bam {output}
+             mv {params.outdir}Aligned.sortedByCoord.out.bam {output.bam}
+             samtools index {output.bam}
             """  
 
 elif config["aligner"] == "hisat2":
     rule hisat:
         input:
-            fq = get_fq,
+            fq = get_trimmed,
 
         output:
-            temp(bam = config["outdir"] + "/Alignments/{sample}.bam"),
-            stat = config["outdir"] + "/Alignments/{sample}_align_stat.txt"
+            temp(bam = "{outdir}/Alignments/{{sample}}.bam".format(**config)),
+            stat = "{outdir}/Alignments/{{sample}}_align_stat.txt".format(**config)
         params:
             input=(
                 lambda wildcards, input: ["-U", input.fq]
@@ -111,3 +118,30 @@ elif config["aligner"] == "hisat2":
          hisat2 -p {threads} --rna-strandness {params.strand} --new-summary {params.other} -x {params.index} {params.input} 2> {out.stat} | samtools view -hb - > {output.bam}
      
             """
+
+rule sort:
+    input:
+        bam = "{outdir}/Alignments/{{sample}}.bam".format(**config)
+
+    output:
+        bam = "{outdir}/Alignment/{{sample}}_sorted.bam".format(**config),
+        bai = "{outdir}/Alignment/{{sample}}_sorted.bam.bai".format(**config)
+
+    params:
+        flag = "-f 0x2" if config["paired"] else "",
+        partition = "talon-fat"
+
+    benchmark:
+        "{outdir}/benchmarks/samtools_sort_{{sample}}.bench.txt".format(**config)  
+
+    resources:
+        cpus = config["resources"]["samtools"]["cpus"],
+        time = config["resources"]["samtools"]["time"],
+        mem = config["resources"]["samtools"]["mem"],
+
+    log:
+        "{outdir}/logs/samtools_sort_{{sample}}.out".format(**config)   
+    shell: """
+        samtools view -hb {params.flag} {input.bam} | samtools sort -o {output.bam} - 
+        samtools index {output.bam}
+        """

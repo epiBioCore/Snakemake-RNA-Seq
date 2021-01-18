@@ -1,13 +1,37 @@
+def get_bams():
+    bamfiles = {}
+    
+    map_ext = 'bam'
+    map_idx = 'bai'
+    
+    bamfiles['map'] = set(); bamfiles['ind'] = set()
+
+    # get all the bams
+    if 'replicate' in samples:
+        for replicate in set(samples['replicate']):
+            bamfiles['map'].update([expand(f"{{outdir}}/Alignments/{replicate}_sorted.{map_ext}", **config)[0]])
+            bamfiles['ind'].update([expand(f"{{outdir}}/Alignments/{replicate}_sorted.{map_ext}.{map_idx}", **config)[0]])
+            
+    else:
+        # suffix is defined in configuration_generic (noting or _custom)
+        bamfiles['map'].update([expand(f"{{outdir}}/Alignments/{sample}_sorted.{map_ext}", **config)[0] for sample in samples.index])
+        bamfiles['ind'].update([expand(f"{{outdir}}/Alignments/{sample}_sorted.{map_ext}.{map_idx}", **config)[0] for sample in samples.index])
+        
+
+    return bamfiles
+
+
+
 
 rule cuffnorm:
-    input:
-        expand(config["outdir"] + "/Alignments/{sample}_sorted.bam",sample=samples)
+    input: get_bams()['map'],
 
     output:
-        dir = directory(config["outdir"] + "/Cuffnorm"),
-        table = directory(config["outdir"] + "/Cuffnorm/genes_fpkm.table")
+        dir = "{outdir}/Cuffnorm/genes.fpkm_table".format(**config),
+
 
     params:
+        dir = directory("{outdir}/Cuffnorm".format(**config)),
         gtf= config["gtf"], 
         lib= config["cuffnorm"]["lib"],
         partition = "talon-fat"
@@ -18,33 +42,34 @@ rule cuffnorm:
         mem = config["resources"]["cuffnorm"]["mem"],
 
     benchmark: 
-        config["outdir"] + "/benchmarks/cuffnorm.bench.txt"
+        "{outdir}/benchmarks/cuffnorm.bench.txt".format(**config)
     
     log: 
-        config["outdir"] + "/logs/cuffnorm.out"
+        "{outdir}/logs/cuffnorm.out".format(**config)
 
     shell:"""
-        cuffnorm -o {output.dir} -p {threads} --library-type {params.lib} {params.gtf} {input} 2> {log}
+        cuffnorm -o {params.dir} -p {resources.cpus} --library-type {params.lib} {params.gtf} {input} 2> {log}
         """
 
 rule featureCounts:
-    input:
-        expand(config["outdir"] + "/Alignment/{sample}_sorted.bam",sample=samples)
+    input: get_bams()['map'],
 
     output:
-        counts = config["outdir"] + "/Counts/geneCounts.txt",
-        stats = config["outdir"] + "/Counts/geneCounts.txt.summary"    
+        counts = "{outdir}/Counts/geneCounts.txt".format(**config),
+        stats = "{outdir}/Counts/geneCounts.txt.summary".format(**config)    
     
     log:
-       config["outdir"] + "/logs/featureCounts.out" 
+       "{outdir}/logs/featureCounts.out".format(**config) 
+
     benchmark:
-       config["outdir"] + "/benchmarks/featureCounts.bench.txt" 
+       "{outdir}/benchmarks/featureCounts.bench.txt".format(**config) 
    
 
     params:
         gtf = config["gtf"],
         strand = config["featureCounts"]["strand"],
-        other = config["featureCounts"]["other"]
+        other = config["featureCounts"]["other"],
+        partition = "talon-fat"
 
     resources:
         cpus = config["resources"]["featureCounts"]["cpus"],
@@ -53,17 +78,23 @@ rule featureCounts:
 
 
     shell: """
-        featureCounts -a {params.gtf} -s {params.strand} {params.other} -o {output.counts} {input} 2> {log}
+        featureCounts -T {resources.cpus} -a {params.gtf} -s {params.strand} {params.other} -o {output.counts} {input} 2> {log}
         """
 
 rule prepfeatureCounts:
     input:
-        counts = config["outdir"] + "/Counts/geneCounts.txt"
+        counts = "{outdir}/Counts/geneCounts.txt".format(**config)
 
     output: 
-        counts = config["outdir"] + "/Counts/geneCounts_for_DESEq2.csv",
-        annot = config["outdir"] + "/Counts/gene_lengths.csv"
+        counts = "{outdir}/Counts/geneCounts_for_DESEq2.csv".format(**config),
+        annot = "{outdir}/Counts/gene_lengths.csv".format(**config),
+    
+    params:
+        partition = "talon"
 
-    script: "Script/prepfeatureCounts.R"    
+    log:
+        "{outdir}/logs/R/prepfeatureCounts.txt".format(**config)    
+
+    script: "{workdir}/Scripts/prepfeatureCounts.R".format(**config)    
 
       

@@ -58,8 +58,6 @@ def get_bioc_species_pkg(wildcards):
 def get_bioc_pkg_path(wildcards):
     return "resources/bioconductor_anno/lib/R/library/{pkg}".format(pkg=get_bioc_species_pkg(wildcards))
 
-def get_bioc_txdb_pkg_path(wildcards):
-    return "resources/bioconductor_txdb/lib/R/library/{pkg}".format(pkg=get_bioc_TxDb_pkg(wildcards))
 
 
 localrules: all, download_bioconductor_annotation_packages,download_bioconductor_txdb_packages
