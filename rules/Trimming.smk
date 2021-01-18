@@ -14,7 +14,7 @@ rule trimmomatic_pe:
         stat = "{outdir}/logs/Trimomatic/{{sample}}_trimmomatic.out".format(**config)
 
     benchmark:
-        "{outdir}/benchmarks/Trimomatic/{sample}_trimmomatic.out".format(**config)
+        "{outdir}/benchmarks/Trimomatic/{{sample}}_trimmomatic.out".format(**config)
 
     params:
         adapter = config["trimmomatic-pe"]["adapters"],

@@ -74,11 +74,11 @@ def get_multiqc_input():
     if 'replicate' in samples:
             for replicate in set(samples['replicate']):
                 input.append([expand(f"{{outdir}}/FastQC/{replicate}_{{fqext}}_Trimmed.fastqc.zip",**config)])
-                input.append([expand(f"{{outdir}}/Trimmed_Fastq/{replicate}_trimmomatic.out",**config)])
+                input.append([expand(f"{{outdir}}/logs/Trimomatic/{replicate}_trimmomatic.out",**config)])
 
     else:
         input.append([expand(f"{{outdir}}/FastQC/{sample}_{{fqext}}_Trimmed.fastqc.zip",**config) for sample in samples.index])
-        input.append([expand(f"{{outdir}}/Trimmed_Fastq/{sample}_trimmomatic.out",**config) for sample in samples.index])
+        input.append([expand(f"{{outdir}}/logs/Trimomatic/{sample}_trimmomatic.out",**config) for sample in samples.index])
 
         
 
@@ -113,16 +113,19 @@ def get_multiqc_input():
 
 
 print(get_multiqc_input())
-# rule combine_multiqc_files:
-#     input: get_multiqc_input
+rule combine_qc_files:
+    input: get_multiqc_input()
 
-#     output:
-#         expand("{qc_dir}/multiqc_{{assembly}}.tmp.files", **config),
+    output:
+        temp(expand("{outdir}/multiqc.tmp.files", **config)),
 
+    run:
+        with open(output[0], mode="w") as out:
+            out.write('\n'.join(input.files))
 
 rule Multiqc:
     input:
-        get_multiqc_input(),
+        files=rules.combine_qc_files.output,
 
     output:
         "{outdir}/Multiqc_report.html".format(**config)   
@@ -131,5 +134,5 @@ rule Multiqc:
         partition = "talon" 
 
     shell: """
-        multiqc {input}
+        multiqc $( < {input.files})
     """
