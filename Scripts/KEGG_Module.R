@@ -23,7 +23,6 @@ units <- snakemake@params[["u"]]
 species_pkg <- snakemake@params[["species_anno"]]
 species <- snakemake@params[["species"]]
 KEGG_Module_species <- substr(species,1,3)
-KEGG_Module_species
 
 load_bioconductor_package(snakemake@input[["species_anno"]], species_pkg)
 
@@ -35,15 +34,18 @@ enrich <- enrichMKEGG(gene = as.character(sig_genes$ENTREZID),
 pAdjustMethod = "BH",
 qvalueCutoff = 0.05)
 
+if (!is.null(enrich)) {
 KEGG_Module <- setReadable(enrich,OrgDb = get(species_pkg),keyType = "ENTREZID")
 
 name <- paste(comp,"KEGG_Module",sep= "_")
 assign(name,KEGG_Module)  
 save(list=name,file = out)
+} else {
+    cat("No gene mapped to KEGG Module genes",file = file.path(dir,paste0(comp,"_KEGG_Module.txt")))
+}
 
 
-
-if(nrow(KEGG_Module)>0) {
+if((!is.null(KEGG_Module)) & nrow(KEGG_Module)>0) {
 write.table(KEGG_Module,file=file.path(dir,paste0(comp,"_KEGG_Module.txt")), sep="\t", quote=F,row.names=F)
 
 b <- barplot(KEGG_Module)

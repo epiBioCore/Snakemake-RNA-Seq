@@ -21,7 +21,7 @@ species_pkg <- snakemake@params[["species_anno"]]
 species <- snakemake@params[["species"]]
 
 l <- listOrganisms()
-l
+
 ### grepl(substr(species,1,1,),species) & grepl(sub(".","",species))
 ### input species is in format hsapiens
 ### Species in wikipathways are in format: Homo sapiens
@@ -29,9 +29,9 @@ l
 ## and also the species name (sapiens)
 ## grepl is finding the wiki organism that starts with the captilized first letter and species name
 first <- paste0("^",toupper(substr(species,1,1)))
-first
+
 organism <- l[grepl(first,l) & grepl(sub(".","",species),l)]
-organism
+
 
 load_bioconductor_package(snakemake@input[["species_anno"]], species_pkg)
 

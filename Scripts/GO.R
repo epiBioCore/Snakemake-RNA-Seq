@@ -62,7 +62,7 @@ ggsave(d,file=file.path(dir,paste0(comp,"_",ont,"_dotplot.png")),width = width,h
 
 
 } else {
-    text = paste("\n   No plot generated because no", GO, " terms found significant \n",
+    text = paste("\n   No plot generated because no", ont, " terms found significant \n",
          "for comparison ",comp,"\n")
          
  p <- ggplot() + 
@@ -70,7 +70,7 @@ ggsave(d,file=file.path(dir,paste0(comp,"_",ont,"_dotplot.png")),width = width,h
   theme_void()
 
  plots <- c("barplot","barplot2","emma","cnet","dotplot")  
- map(plots,~ggsave(p,file=file.path(dir,paste0(comp,"_",ont,"_",.x,".png")),width = width,height = height,units = units))
+ map(plots,~ggsave(p,file=file.path(dir,paste0(comp,"_",ont,"_",.x,".png"))))
 
 
 }

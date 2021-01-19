@@ -23,7 +23,7 @@ units <- snakemake@params[["u"]]
 species_pkg <- snakemake@params[["species_anno"]]
 species <- snakemake@params[["species"]]
 kegg_species <- substr(species,1,3)
-kegg_species
+
 
 load_bioconductor_package(snakemake@input[["species_anno"]], species_pkg)
 
@@ -66,11 +66,11 @@ ggsave(d, file=file.path(dir,paste0(comp,"_KEGG_dotplot.png")),width = width,hei
     text = paste("\n   No plot generated, because no terms found significant.\n",
          "       for comparison ",comp,"\n")
  p <- ggplot() + 
-  annotate("text", x = 4, y = 25, size=8, label = text) + 
+  annotate("text", x = 4, y = 25, size=4, label = text) + 
   theme_void()
 
  plots <- c("barplot","barplot2","emma","cnet","dotplot")  
- map(plots,~ggsave(p,file=file.path(dir,paste0(comp,"_KEGG_",plot,".png")),width = width,height = height,units = units))
+ map(plots,~ggsave(p,file=file.path(dir,paste0(comp,"_KEGG_",.x,".png"))))
 
 
 }

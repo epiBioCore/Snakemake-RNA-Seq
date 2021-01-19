@@ -11,6 +11,9 @@ rule bigwigs:
     benchmark:
         "{outdir}/benchmarks/bamCoverage/{{sample}}.bench.txt".format(**config)
     
+    params:
+        partition = "talon-fat"
+
     resources:
         cpus = config["resources"]["bamCov"]["cpus"],
         time = config["resources"]["bamCov"]["time"],

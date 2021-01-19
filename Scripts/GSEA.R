@@ -57,11 +57,7 @@ assign(name,gse)
 save(list=name,file = out)
 gse <- setReadable(gse,get(species_pkg),keyType = "ENTREZID")
 
-height
-width
-units
-gse
-class(gse)
+
 if(nrow(gse)>0) {
 write.table(gse,file=file.path(dir,paste0(comp,"GSEA.txt")), sep="\t", quote=F,row.names=F)
 
@@ -84,7 +80,7 @@ ggsave(d,file=file.path(dir,paste0(comp,"_GSEA_dotplot.png")),width = width,heig
   theme_void()
 
  plots <- c("emma","cnet","dotplot")  
- map(plots,~ggsave(p,file=file.path(out,paste0(comp,"_gsea_plot.png")),width = width,height = height,units = units))
+ map(plots,~ggsave(p,file=file.path(dir,paste0(comp,"_gsea_",.x,"_plot.png"))))
 
 
 }

@@ -19,7 +19,7 @@ rule GO_enrichment:
     log:
         "{outdir}/logs/Enrichment/{{contrast}}_{{GO}}.out".format(**config)
     benchmark:
-        "{outdir}/benchmark/Enrichment/{{contrast}}_{{GO}}.out".format(**config)
+        "{outdir}/benchmarks/Enrichment/{{contrast}}_{{GO}}.out".format(**config)
             
     resources:
         cpus = config["resources"]["Enrich"]["cpus"],
@@ -49,7 +49,7 @@ rule GSEA_enrichment:
     log:
         "{outdir}/logs/Enrichment/{{contrast}}_GSEA.out".format(**config)
     benchmark:
-        "{outdir}/benchmark/Enrichment/{{contrast}}_GSEA.out".format(**config)
+        "{outdir}/benchmarks/Enrichment/{{contrast}}_GSEA.out".format(**config)
             
     resources:
         cpus = config["resources"]["Enrich"]["cpus"],
@@ -80,7 +80,7 @@ rule KEGG_module_enrichment:
     log:
         "{outdir}/logs/Enrichment/{{contrast}}_KEGG_module.out".format(**config)
     benchmark:
-        "{outdir}/benchmark/Enrichment/{{contrast}}_KEGG_module.out".format(**config)
+        "{outdir}/benchmarks/Enrichment/{{contrast}}_KEGG_module.out".format(**config)
             
     resources:
         cpus = config["resources"]["Enrich"]["cpus"],
@@ -111,7 +111,7 @@ rule KEGG_enrichment:
     log:
         "{outdir}/logs/Enrichment/{{contrast}}_KEGG.out".format(**config)
     benchmark:
-        "{outdir}/benchmark/Enrichment/{{contrast}}_KEGG.out".format(**config)
+        "{outdir}/benchmarks/Enrichment/{{contrast}}_KEGG.out".format(**config)
             
     resources:
         cpus = config["resources"]["Enrich"]["cpus"],
@@ -142,7 +142,7 @@ rule wikipathways_enrichment:
     log:
         "{outdir}/logs/Enrichment/{{contrast}}_wikipathways.out".format(**config)
     benchmark:
-        "{outdir}/benchmark/Enrichment/{{contrast}}_wikipathways.out".format(**config)
+        "{outdir}/benchmarks/Enrichment/{{contrast}}_wikipathways.out".format(**config)
             
     resources:
         cpus = config["resources"]["Enrich"]["cpus"],
@@ -172,7 +172,7 @@ rule spia:
     log:
         "{outdir}/logs/Enrichment/{{contrast}}_spia.out".format(**config)
     benchmark:
-        "{outdir}/benchmark/Enrichment/{{contrast}}_spia.out".format(**config)
+        "{outdir}/benchmarks/Enrichment/{{contrast}}_spia.out".format(**config)
             
     resources:
         cpus = config["resources"]["Enrich"]["cpus"],
