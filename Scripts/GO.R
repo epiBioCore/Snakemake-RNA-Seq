@@ -40,7 +40,7 @@ assign(name,enrich)
 save(list=name,file = out)
 
 save(enrich,file=out)
-if(nrow(enrich)>0) {
+if(nrow(enrich)>1) {
 write.table(enrich,file=file.path(dir,paste0(comp,"_",ont,".txt")), sep="\t", quote=F,row.names=F)
 
 
@@ -51,8 +51,8 @@ b2 <- barplot(enrich,showCategory=12,drop=T)
 ggsave(b2,file=file.path(dir,paste0(comp,"_",ont,"_barplot2.png")),width = width,height = height,units = units)
 
 
-#e <- emapplot(pairwise_termsim(enrich))
-#ggsave(e,file=file.path(dir,paste0(comp,"_",ont,"_emma.png")),width = width,height = height,units = units)
+e <- emapplot(pairwise_termsim(enrich))
+ggsave(e,file=file.path(dir,paste0(comp,"_",ont,"_emma.png")),width = width,height = height,units = units)
 
 c <- cnetplot(enrich)
 ggsave(c,file=file.path(dir,paste0(comp,"_",ont,"_cnet.png")),width = width,height = height,units = units)

@@ -58,7 +58,7 @@ save(list=name,file = out)
 gse <- setReadable(gse,get(species_pkg),keyType = "ENTREZID")
 
 
-if(nrow(gse)>0) {
+if(nrow(gse)>1) {
 write.table(gse,file=file.path(dir,paste0(comp,"GSEA.txt")), sep="\t", quote=F,row.names=F)
 
 

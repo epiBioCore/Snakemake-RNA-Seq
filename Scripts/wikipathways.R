@@ -40,8 +40,9 @@ sig_genes <- read.csv(sig_genes)
 ##
 
 wp.gmt <- rWikiPathways::downloadPathwayArchive(organism=organism, format = "gmt")
+wp.gmt
 wp2gene <- clusterProfiler::read.gmt(wp.gmt)
-head(wp2gene)
+wp2gene
 wp2gene <- wp2gene %>% tidyr::separate(term, c("name","version","wpid","org"), "%")
 wpid2gene <- wp2gene %>% dplyr::select(wpid,gene) #TERM2GENE
 wpid2name <- wp2gene %>% dplyr::select(wpid,name) #TERM2NAME
@@ -57,7 +58,7 @@ save(list=name,file = out)
 
 
 
-if(nrow(ewp)>0) {
+if(nrow(ewp)>1) {
 write.table(ewp,file=file.path(dir,paste0(comp,"_wikipathways.txt")), sep="\t", quote=F,row.names=F)
 
 b <- barplot(ewp)

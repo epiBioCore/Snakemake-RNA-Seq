@@ -43,7 +43,7 @@ save(list=name,file = out)
 
 
 
-if(nrow(KEGG)>0) {
+if(nrow(KEGG)>1) {
 write.table(KEGG,file=file.path(dir,paste0(comp,"_KEGG.txt")), sep="\t", quote=F,row.names=F)
 
 b <- barplot(KEGG)
