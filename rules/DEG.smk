@@ -60,7 +60,7 @@ def get_bioc_pkg_path(wildcards):
 
 
 
-localrules: all, download_bioconductor_annotation_packages,download_bioconductor_txdb_packages
+localrules: all, download_bioconductor_annotation_packages
 
 
 

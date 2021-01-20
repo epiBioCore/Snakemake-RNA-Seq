@@ -275,4 +275,7 @@ rule DESeq2_all:
         expand("{outdir}/DESeq2/dist_clustering.pdf",contrast=get_contrast(),outdir=config["outdir"]),
         expand("{outdir}/DESeq2/{contrast}_DEtable_ALL_genes.csv",contrast=get_contrast(),outdir=config["outdir"]),
 
+rule PCA_all:
+    input:
+        expand("{outdir}/DESeq2/PCA_{dim}_colored_by_{var}.pdf",dim=["PC1vsPC2","PC1vsPC3","PC2vsPC3"],var=config["pca"]["col"],outdir=config["outdir"]),
 

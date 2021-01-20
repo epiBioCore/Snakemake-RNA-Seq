@@ -17,6 +17,7 @@ gtf: "/home/danielle.perley/Ref/hg19.gtf"
 # how to handle replicates
 technical_replicates: merge ## change to keep to not combine
 sample_sheet: "G2020-47_and_20-089_samples.txt"
+comparison_sheet: comparisons.final.txt
 
 annotation:
   species: "hsapiens"
@@ -31,14 +32,14 @@ trimmomatic-se:
   adapters: /home/danielle.perley/miniconda3/envs/RNA-Seq.2020.12/share/trimmomatic-0.39-1/adapters/TruSeq3-SE.fa
   other: "MINLEN:10"
 
-cutadapt-pe:
-  r1_adapter: "AGAGCACACGTCTGAACTCCAGTCAC"
-  r2_adapter: "AGATCGGAAGAGCACACGT"
-  params: "-q 0 -m 20"
+# cutadapt-pe:
+#   r1_adapter: "AGAGCACACGTCTGAACTCCAGTCAC"
+#   r2_adapter: "AGATCGGAAGAGCACACGT"
+#   params: "-q 0 -m 20"
 
-cutadapt-se:
-  r1_adapter: "AGAGCACACGTCTGAACTCCAGTCAC"
-  params: "-q 0 -m 20"  
+# cutadapt-se:
+#   r1_adapter: "AGAGCACACGTCTGAACTCCAGTCAC"
+#   params: "-q 0 -m 20"  
 
 #RNA solo ovation
 #  params: "--clip_R1 5"
@@ -63,9 +64,10 @@ DESeq2:
 
 pca:
   col:
-    - condition    
-  labels: TRUE
-  label_size: 1  
+    - condition
+    - Project    
+  labels: FALSE
+  label_size: 2  
 
 sample_clustering:
   row_labels: condition

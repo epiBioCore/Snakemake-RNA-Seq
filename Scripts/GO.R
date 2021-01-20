@@ -34,7 +34,7 @@ enrich <- enrichGO(gene =as.character(sig_genes$ENTREZID),
          qvalueCutoff  = 0.05, readable =TRUE)
 
 
-
+enrich
 name <- paste(comp,ont,sep= "_")
 assign(name,enrich)  
 save(list=name,file = out)
@@ -51,8 +51,8 @@ b2 <- barplot(enrich,showCategory=12,drop=T)
 ggsave(b2,file=file.path(dir,paste0(comp,"_",ont,"_barplot2.png")),width = width,height = height,units = units)
 
 
-e <- emapplot(pairwise_termsim(enrich))
-ggsave(e,file=file.path(dir,paste0(comp,"_",ont,"_emma.png")),width = width,height = height,units = units)
+#e <- emapplot(pairwise_termsim(enrich))
+#ggsave(e,file=file.path(dir,paste0(comp,"_",ont,"_emma.png")),width = width,height = height,units = units)
 
 c <- cnetplot(enrich)
 ggsave(c,file=file.path(dir,paste0(comp,"_",ont,"_cnet.png")),width = width,height = height,units = units)

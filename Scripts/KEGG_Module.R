@@ -40,12 +40,10 @@ KEGG_Module <- setReadable(enrich,OrgDb = get(species_pkg),keyType = "ENTREZID")
 name <- paste(comp,"KEGG_Module",sep= "_")
 assign(name,KEGG_Module)  
 save(list=name,file = out)
-} else {
-    cat("No gene mapped to KEGG Module genes",file = file.path(dir,paste0(comp,"_KEGG_Module.txt")))
-}
 
 
-if((!is.null(KEGG_Module)) & nrow(KEGG_Module)>0) {
+
+if( nrow(KEGG_Module)>0) {
 write.table(KEGG_Module,file=file.path(dir,paste0(comp,"_KEGG_Module.txt")), sep="\t", quote=F,row.names=F)
 
 b <- barplot(KEGG_Module)
@@ -54,8 +52,8 @@ ggsave(b,file=file.path(dir,paste0(comp,"_KEGG_Module_barplot.png")),width = wid
 b2 <- barplot(KEGG_Module,showCategory=12,drop=T)
 ggsave(b2,file=file.path(dir,paste0(comp,"_KEGG_Module_barplot2.png")),width = width,height = height,units = units)
 
-e <- emapplot(pairwise_termsim(KEGG_Module))
-ggsave(e,file=file.path(dir,paste0(comp,"_KEGG_Module_emma.png")),width = width,height = height,units = units)
+#e <- emapplot(pairwise_termsim(KEGG_Module))
+#ggsave(e,file=file.path(dir,paste0(comp,"_KEGG_Module_emma.png")),width = width,height = height,units = units)
 
 c <- cnetplot(KEGG_Module)
 ggsave(c, file=file.path(dir,paste0(comp,"_KEGG_Module_cnet.png")),width = width,height = height,units = units)
@@ -75,4 +73,7 @@ ggsave(d, file=file.path(dir,paste0(comp,"_KEGG_Module_dotplot.png")),width = wi
  map(plots,~ggsave(p,file=file.path(dir,paste0(comp,"_KEGG_Module_",.x,".png"))))
 
 
+}
+} else {
+    cat("No gene mapped to KEGG Module genes",file = file.path(dir,paste0(comp,"_KEGG_Module.txt")))
 }

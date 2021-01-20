@@ -15,7 +15,7 @@ comparisons <- snakemake@params$comparisons
 replicates <- snakemake@params$replicates
 threads <- snakemake@resources$cpus
 
-if (snakemake@config$use_cuffnorm_fpkms) fpkms <- snakemake@input[["cuff_fpkms"]]
+if (snakemake@config$use_cuffnorm_fpkms) {fpkms <- snakemake@input[["cuff_fpkms"]]}
 counts<-read.csv(counts,header=TRUE,stringsAsFactors=F,check.names = F,row.names=1)
 
 head(counts)
@@ -112,7 +112,7 @@ if ("descriptive_name" %in% colnames(colData)) colnames(count_data) <- colData$d
 if (ncol(c_sheet) == 4) {
   column <- c_sheet[,2]
 } else if (ncol(c_sheet) == 3) {
-    column <- c_sheet[,2]
+    column <- c_sheet[,1]
 }
 
 column 
