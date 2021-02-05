@@ -1,4 +1,0 @@
-sample	unit	replicate	condition	descriptive_name	fq1	fq2
-20-016-010	L1	control_1	control	20-016-010	Raw_fastq/20-016-010_L1_R1.fastq.gz	Raw_fastq/20-016-010_L1_R2.fastq.gz
-20-016-010	L2	control_1	control	20-016-010	Raw_fastq/20-016-010_L2_R1.fastq.gz	Raw_fastq/20-016-010_L2_R2.fastq.gz
-20-016-056	L1	Treat_1	Treat	20-016-056	Raw_fastq/20-016-056_L1_R1.fastq.gz	Raw_fastq/20-016-056_L1_R2.fastq.gz
