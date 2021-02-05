@@ -9,7 +9,8 @@ from pandas_schema.validation import MatchesPatternValidation, IsDistinctValidat
 from snakemake.exceptions import TerminatedException
 
 
-## inspired by https://github.com/snakemake-workflows/rna-seq-star-deseq2
+## inspired by https://github.com/vanheeringen-lab/seq2science and 
+# https://github.com/snakemake-workflows/rna-seq-star-deseq2
 
 configfile: "config.yaml"
 workdir: config['workdir']
