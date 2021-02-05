@@ -139,15 +139,16 @@ if (toupper(ids) == "SYMBOL") {
   columns <- c("ENSEMBL", "ENTREZID","GENENAME")  
 
   annot <- AnnotationDbi::select(get(species_pkg), keys=Res_with_means_fpkm$GeneID, columns=columns, keytype=key)
-  Res_to_export <- inner_join(Res_with_means_fpkm,annot,by=c("GeneID" = "SYMBOL"))
+  annot <- filter(annot,!duplicated(SYMBOL))
+  Res_to_export <- left_join(Res_with_means_fpkm,annot,by=c("GeneID" = "SYMBOL"))
 
 } else if (toupper(ids) == "ENSEMBL") {
   key <- "ENSEMBL"
-  key
   cols <- c("SYMBOL", "ENTREZID","GENENAME")
 
   annot <- select(get(species_pkg), keys=Res_with_means_fpkm$GeneID, columns=cols, keytype=key)
-  Res_to_export <- inner_join(Res_with_means_fpkm,annot,by=c("GeneID" = "ENSEMBL"))
+  annot <- filter(annot,!duplicated(ENSEMBL))
+  Res_to_export <- left_join(Res_with_means_fpkm,annot,by=c("GeneID" = "ENSEMBL"))
 
 }
  
